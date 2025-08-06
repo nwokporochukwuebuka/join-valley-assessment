@@ -1,0 +1,102 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
+generator client {
+  provider = "prisma-client-js"
+  // output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum SeniorityLevel {
+  junior
+  mid
+  senior
+}
+
+model Prospect {
+  id             String          @id @default(uuid())
+  name           String
+  headline       String?
+  company        String?
+  industry       String?
+  seniorityLevel SeniorityLevel?
+  location       String?
+  linkedinUrl    String          @unique
+  rawData        Json?
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  messageSequences MessageSequence[]
+
+  @@map("prospects")
+}
+
+model TovConfig {
+  id             String   @id @default(uuid())
+  formality      Float    @db.Real
+  warmth         Float    @db.Real
+  directness     Float    @db.Real
+  technicalDepth Float    @default(0.5) @db.Real
+  urgency        Float    @default(0.3) @db.Real
+  createdAt      DateTime @default(now())
+
+  messageSequences MessageSequence[]
+
+  @@map("tov_configs")
+}
+
+model AiGeneration {
+  id               String   @id @default(uuid())
+  modelUsed        String
+  promptTokens     Int      @default(0)
+  completionTokens Int      @default(0)
+  totalCost        Float    @default(0) @db.Real
+  thinkingProcess  String?
+  rawResponse      Json?
+  success          Boolean
+  errorMessage     String?
+  createdAt        DateTime @default(now())
+
+  messageSequences MessageSequence[]
+
+  @@map("ai_generations")
+}
+
+model MessageSequence {
+  id               String   @id @default(uuid())
+  prospectId       String
+  tovConfigId      String?
+  aiGenerationId   String?
+  companyContext   String
+  messages         Json
+  prospectInsights Json?
+  createdAt        DateTime @default(now())
+
+  prospect     Prospect      @relation(fields: [prospectId], references: [id], onDelete: Cascade)
+  tovConfig    TovConfig?    @relation(fields: [tovConfigId], references: [id], onDelete: SetNull)
+  aiGeneration AiGeneration? @relation(fields: [aiGenerationId], references: [id], onDelete: SetNull)
+
+  performance SequencePerformance?
+
+  @@map("message_sequences")
+}
+
+model SequencePerformance {
+  id            String   @id @default(uuid())
+  sequenceId    String   @unique
+  sentCount     Int      @default(0)
+  responseCount Int      @default(0)
+  meetingBooked Boolean  @default(false)
+  lastUpdated   DateTime @default(now()) @updatedAt
+
+  sequence MessageSequence @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+
+  @@map("sequence_performance")
+}
