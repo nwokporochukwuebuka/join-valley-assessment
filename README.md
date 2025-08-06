@@ -12,6 +12,8 @@ npm run start:dev
 
 ### Test endpoint:
 
+LIVE URL: https://join-valley-assessment.onrender.com/v1/api/generate-sequence
+
 ```bash
 curl -X POST http://localhost:3000/v1/api/generate-sequence \
  -H "Content-Type: application/json" \
